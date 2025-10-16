@@ -5,7 +5,7 @@ const encryptionService = require(path.join(__dirname, '../../encryptionService.
 
 const router = express.Router()
 
-const ALLOWED_EXTENSIONS = new Set(['cer', 'key', 'p12', 'json', 'jks'])
+const ALLOWED_EXTENSIONS = new Set(['cer', 'key', 'p12', 'json', 'jks', 'p8'])
 
 function getFileExtension(fileName) {
   const parts = fileName.split('.')
@@ -31,7 +31,7 @@ router.post('/encrypt', upload.single('file'), async (req, res, next) => {
 
     const encryptedBuffer = encryptionService.encryptFile(buffer)
 
-    const downloadName = `${originalname}.enc`
+    const downloadName = originalname
     res.setHeader('Content-Type', 'application/octet-stream')
     res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`)
     res.setHeader('X-Encrypted', 'true')
@@ -49,13 +49,8 @@ router.post('/decrypt', upload.single('file'), async (req, res, next) => {
 
     const { originalname, buffer } = req.file
 
-    // best-effort filename restoration
-    let baseName = originalname
-    if (baseName.toLowerCase().endsWith('.enc')) {
-      baseName = baseName.slice(0, -4)
-    } else {
-      baseName = `${baseName}.decrypted`
-    }
+    // Keep original filename/extension
+    const baseName = originalname
 
     const decryptedBuffer = encryptionService.decryptFile(buffer)
 

@@ -11,13 +11,13 @@ import { HttpClient } from '@angular/common/http'
       <div class="card-body">
         <form (submit)="onSubmit($event)">
           <div class="mb-3">
-            <input type="file" class="form-control" (change)="onFileChange($event)" />
+            <input type="file" class="form-control" (change)="onFileChange($event)" accept=".enc" />
           </div>
           <button class="btn btn-primary" [disabled]="!selectedFile || loading">
             {{ loading ? 'Decrypting...' : 'Upload Encrypted & Download Decrypted' }}
           </button>
         </form>
-        <div class="text-muted mt-2">Upload a .enc produced by this tool</div>
+        <div class="text-muted mt-2">Upload the encrypted file. The downloaded file keeps the same name.</div>
         <div class="text-danger mt-2" *ngIf="error">{{ error }}</div>
       </div>
     </div>
@@ -56,7 +56,7 @@ export class DecryptComponent {
           const blob = resp.body as Blob
           const dispo = resp.headers.get('Content-Disposition') || ''
           const match = /filename="?([^";]+)"?/i.exec(dispo || '')
-          const filename = match ? match[1] : `${this.selectedFile!.name}.decrypted`
+          const filename = match ? match[1] : this.selectedFile!.name
           const url = window.URL.createObjectURL(blob)
           const a = document.createElement('a')
           a.href = url
@@ -65,8 +65,18 @@ export class DecryptComponent {
           window.URL.revokeObjectURL(url)
           this.loading = false
         },
-        error: (err) => {
-          this.error = err?.error?.error || 'Decryption failed'
+        error: async (err) => {
+          try {
+            if (err?.error instanceof Blob) {
+              const text = await (err.error as Blob).text()
+              const data = JSON.parse(text)
+              this.error = data?.error || 'Decryption failed'
+            } else {
+              this.error = err?.error?.error || err?.message || 'Decryption failed'
+            }
+          } catch {
+            this.error = 'Decryption failed'
+          }
           this.loading = false
         },
       })

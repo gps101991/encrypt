@@ -11,13 +11,13 @@ import { HttpClient } from '@angular/common/http'
       <div class="card-body">
         <form (submit)="onSubmit($event)">
           <div class="mb-3">
-            <input type="file" class="form-control" (change)="onFileChange($event)" />
+            <input type="file" class="form-control" (change)="onFileChange($event)" accept=".cer,.key,.p12,.json,.jks,.p8" />
           </div>
           <button class="btn btn-primary" [disabled]="!selectedFile || loading">
             {{ loading ? 'Encrypting...' : 'Encrypt & Download' }}
           </button>
         </form>
-        <div class="text-muted mt-2">Allowed: .cer, .key, .p12, .json, .jks</div>
+        <div class="text-muted mt-2">Allowed: .cer, .key, .p12, .json, .jks, .p8</div>
         <div class="text-danger mt-2" *ngIf="error">{{ error }}</div>
       </div>
     </div>
@@ -56,7 +56,7 @@ export class EncryptComponent {
           const blob = resp.body as Blob
           const dispo = resp.headers.get('Content-Disposition') || ''
           const match = /filename="?([^";]+)"?/i.exec(dispo || '')
-          const filename = match ? match[1] : `${this.selectedFile!.name}.enc`
+          const filename = match ? match[1] : this.selectedFile!.name
           const url = window.URL.createObjectURL(blob)
           const a = document.createElement('a')
           a.href = url
@@ -65,8 +65,18 @@ export class EncryptComponent {
           window.URL.revokeObjectURL(url)
           this.loading = false
         },
-        error: (err) => {
-          this.error = err?.error?.error || 'Encryption failed'
+        error: async (err) => {
+          try {
+            if (err?.error instanceof Blob) {
+              const text = await (err.error as Blob).text()
+              const data = JSON.parse(text)
+              this.error = data?.error || 'Encryption failed'
+            } else {
+              this.error = err?.error?.error || err?.message || 'Encryption failed'
+            }
+          } catch {
+            this.error = 'Encryption failed'
+          }
           this.loading = false
         },
       })
