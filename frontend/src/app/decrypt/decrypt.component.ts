@@ -11,13 +11,13 @@ import { HttpClient } from '@angular/common/http'
       <div class="card-body">
         <form (submit)="onSubmit($event)">
           <div class="mb-3">
-            <input type="file" class="form-control" (change)="onFileChange($event)" accept=".enc" />
+            <input type="file" class="form-control" (change)="onFileChange($event)" accept=".cer,.key,.p12,.json,.jks,.p8" />
           </div>
           <button class="btn btn-primary" [disabled]="!selectedFile || loading">
             {{ loading ? 'Decrypting...' : 'Upload Encrypted & Download Decrypted' }}
           </button>
         </form>
-        <div class="text-muted mt-2">Upload the encrypted file. The downloaded file keeps the same name.</div>
+        <div class="text-muted mt-2">Upload the encrypted file (same extension as original). The download keeps the same name.</div>
         <div class="text-danger mt-2" *ngIf="error">{{ error }}</div>
       </div>
     </div>
